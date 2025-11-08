@@ -594,3 +594,150 @@ Special thanks to the amazing open-source community and researchers:
 **⚡ Last Updated: 2025 | 🔥 Trending in DeepFake Detection**
 
 </div>
+
+---
+
+## 🛠️ Development
+
+This project uses modern Python development tools for code quality and consistency.
+
+### 🔧 Development Setup
+
+1. **Clone and install in development mode:**
+
+```bash
+git clone https://github.com/umitkacar/DeepFake-EfficientNet.git
+cd DeepFake-EfficientNet
+
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
+```
+
+2. **Development tools included:**
+
+- **Hatch**: Modern Python project management
+- **Ruff**: Lightning-fast linting and formatting
+- **Black**: Code formatter
+- **isort**: Import sorting
+- **mypy**: Static type checking
+- **pytest**: Testing framework
+- **coverage**: Code coverage reporting
+- **pre-commit**: Git hooks for code quality
+
+### 📋 Common Development Tasks
+
+Use the `Makefile` for common tasks:
+
+```bash
+make help              # Show all available commands
+make install-dev       # Install with dev dependencies
+make test              # Run tests
+make test-cov          # Run tests with coverage
+make lint              # Run all linters
+make format            # Format code
+make clean             # Clean build artifacts
+make build             # Build package
+make pre-commit        # Run pre-commit on all files
+```
+
+### 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=deepfake_detector --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_model.py
+
+# Run tests in parallel
+pytest -n auto
+
+# Run only unit tests
+pytest -m unit
+
+# Run tests and watch for changes
+make watch-test
+```
+
+### 🎨 Code Quality
+
+```bash
+# Format code
+make format
+
+# Run linters
+make lint
+
+# Type checking
+mypy deepfake_detector
+
+# Security scan
+bandit -r deepfake_detector
+```
+
+### 🔄 Pre-commit Hooks
+
+Pre-commit hooks run automatically on `git commit`:
+
+- Trailing whitespace removal
+- File size checks
+- YAML/TOML/JSON validation
+- Ruff linting and formatting
+- Black formatting
+- isort import sorting
+- mypy type checking
+- Security checks with bandit
+
+**Run manually:**
+```bash
+pre-commit run --all-files
+```
+
+### 📦 Building and Publishing
+
+```bash
+# Build package
+python -m build
+
+# Test on TestPyPI
+make publish-test
+
+# Publish to PyPI
+make publish
+```
+
+### 🚀 CI/CD
+
+GitHub Actions workflows automatically run on push/PR:
+
+- ✅ **Linting**: Ruff, Black, isort, mypy
+- ✅ **Testing**: pytest on Python 3.8, 3.9, 3.10, 3.11
+- ✅ **Coverage**: Codecov integration
+- ✅ **Security**: Bandit security scanning
+- ✅ **Build**: Package building
+
+### 📊 Project Configuration
+
+All configuration is centralized in `pyproject.toml`:
+
+- Build system (Hatch)
+- Dependencies
+- Development tools (Ruff, Black, mypy, pytest)
+- Package metadata
+- Scripts and entry points
+
+### 🎯 Code Standards
+
+- **Python**: >= 3.8
+- **Line length**: 100 characters
+- **Style**: Black + Ruff
+- **Type hints**: Encouraged (mypy checks)
+- **Docstrings**: Google style
+- **Test coverage**: Aim for >80%
+

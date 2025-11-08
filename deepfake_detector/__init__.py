@@ -12,6 +12,9 @@ from deepfake_detector.data import DeepFakeDataset
 from deepfake_detector.utils import setup_logger, calculate_metrics
 
 __all__ = [
+    "__version__",
+    "__author__",
+    "__license__",
     "DeepFakeDetector",
     "DeepFakeDataset",
     "setup_logger",

@@ -116,5 +116,5 @@ def get_optimal_num_workers() -> int:
     # Heuristic: use 75% of CPUs, but not more than 8
     optimal = min(max(1, int(num_cpus * 0.75)), 8)
 
-    logger.info(f"Detected {num_cpus} CPUs, recommending {optimal} workers")
+    logger.debug(f"Detected {num_cpus} CPUs, recommending {optimal} workers")
     return optimal

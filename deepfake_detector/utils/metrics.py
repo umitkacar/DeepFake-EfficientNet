@@ -5,7 +5,7 @@ Includes EER, ACER, APCER, NPCER, and other forensic metrics.
 
 import numpy as np
 import math
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 import logging
 
@@ -235,22 +235,25 @@ def calculate_comprehensive_metrics(
     return metrics
 
 
-def print_metrics(metrics: Dict[str, float], title: str = "Metrics") -> None:
+def print_metrics(metrics: Dict[str, float], title: str = "Metrics", use_logging: bool = False) -> None:
     """
     Pretty print metrics.
 
     Args:
         metrics: Dictionary of metrics
         title: Title for the metrics display
+        use_logging: If True, use logger.info instead of print
     """
-    print(f"\n{'='*60}")
-    print(f"{title:^60}")
-    print(f"{'='*60}")
+    output_fn = logger.info if use_logging else print
+
+    output_fn(f"\n{'='*60}")
+    output_fn(f"{title:^60}")
+    output_fn(f"{'='*60}")
 
     for key, value in metrics.items():
         if isinstance(value, (int, np.integer)):
-            print(f"{key:.<30} {value:>10d}")
+            output_fn(f"{key:.<30} {value:>10d}")
         else:
-            print(f"{key:.<30} {value:>10.4f}")
+            output_fn(f"{key:.<30} {value:>10.4f}")
 
-    print(f"{'='*60}\n")
+    output_fn(f"{'='*60}\n")

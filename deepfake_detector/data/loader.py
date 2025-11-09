@@ -18,7 +18,7 @@ def create_dataloaders(
     batch_size: int = 32,
     num_workers: int = 4,
     pin_memory: bool = True,
-    drop_last_train: bool = True
+    drop_last_train: bool = True,
 ) -> Tuple[Optional[DataLoader], ...]:
     """
     Create PyTorch DataLoaders for train/val/test datasets.
@@ -56,7 +56,7 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=pin_memory,
             drop_last=drop_last_train,
-            persistent_workers=num_workers > 0
+            persistent_workers=num_workers > 0,
         )
         logger.info(
             f"Train DataLoader created: {len(train_dataset)} samples, "
@@ -71,7 +71,7 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=pin_memory,
             drop_last=False,
-            persistent_workers=num_workers > 0
+            persistent_workers=num_workers > 0,
         )
         logger.info(
             f"Validation DataLoader created: {len(val_dataset)} samples, "
@@ -86,11 +86,10 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=pin_memory,
             drop_last=False,
-            persistent_workers=num_workers > 0
+            persistent_workers=num_workers > 0,
         )
         logger.info(
-            f"Test DataLoader created: {len(test_dataset)} samples, "
-            f"{len(test_loader)} batches"
+            f"Test DataLoader created: {len(test_dataset)} samples, " f"{len(test_loader)} batches"
         )
 
     return train_loader, val_loader, test_loader

@@ -5,15 +5,16 @@ Extracts faces from videos and images for deepfake detection.
 """
 
 import argparse
-import os
 import glob
+import logging
+import os
 import time
-import cv2
-import torch
 from pathlib import Path
 from typing import List, Tuple
+
+import cv2
+import torch
 from tqdm import tqdm
-import logging
 
 try:
     from facenet_pytorch import MTCNN
@@ -24,8 +25,8 @@ except ImportError:
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(asctime)s] [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="[%(asctime)s] [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -43,12 +44,12 @@ class FastMTCNN:
         resize: float = 1.0,
         margin: int = 50,
         min_face_size: int = 100,
-        thresholds: List[float] = [0.6, 0.7, 0.7],
+        thresholds: List[float] = None,
         factor: float = 0.7,
         post_process: bool = True,
         select_largest: bool = True,
         keep_all: bool = True,
-        device: str = 'cuda'
+        device: str = "cuda",
     ):
         """
         Initialize FastMTCNN.
@@ -65,6 +66,8 @@ class FastMTCNN:
             keep_all: Keep all detected faces
             device: Device to run on ('cuda' or 'cpu')
         """
+        if thresholds is None:
+            thresholds = [0.6, 0.7, 0.7]
         self.stride = stride
         self.resize = resize
 
@@ -76,7 +79,7 @@ class FastMTCNN:
             post_process=post_process,
             select_largest=select_largest,
             keep_all=keep_all,
-            device=device
+            device=device,
         )
 
         logger.info(f"FastMTCNN initialized on {device}")
@@ -100,7 +103,7 @@ class FastMTCNN:
             ]
 
         # Detect faces
-        boxes, probs = self.mtcnn.detect(frames[::self.stride])
+        boxes, probs = self.mtcnn.detect(frames[:: self.stride])
 
         faces_count = 0
         for i, frame in enumerate(frames):
@@ -113,7 +116,7 @@ class FastMTCNN:
                 box = [int(b) for b in box]
 
                 # Extract face region
-                face = frame[box[1]:box[3], box[0]:box[2]]
+                face = frame[box[1] : box[3], box[0] : box[2]]
 
                 # Validate face
                 if len(face) == 0 or face.shape[0] < 10 or face.shape[1] < 10:
@@ -134,11 +137,7 @@ class FastMTCNN:
 
 
 def process_video(
-    video_path: str,
-    output_dir: str,
-    mtcnn: FastMTCNN,
-    batch_size: int = 60,
-    frame_skip: int = 30
+    video_path: str, output_dir: str, mtcnn: FastMTCNN, batch_size: int = 60, frame_skip: int = 30
 ) -> Tuple[int, int]:
     """
     Process a single video file.
@@ -185,11 +184,7 @@ def process_video(
     return frames_processed, faces_detected
 
 
-def process_image(
-    image_path: str,
-    output_dir: str,
-    mtcnn: FastMTCNN
-) -> Tuple[int, int]:
+def process_image(image_path: str, output_dir: str, mtcnn: FastMTCNN) -> Tuple[int, int]:
     """
     Process a single image file.
 
@@ -217,36 +212,38 @@ def process_image(
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Extract faces from videos and images using MTCNN',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Extract faces from videos and images using MTCNN",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     # Input/Output
-    parser.add_argument('--input-dir', type=str, required=True,
-                        help='Input directory containing videos/images')
-    parser.add_argument('--output-dir', type=str, required=True,
-                        help='Output directory for extracted faces')
+    parser.add_argument(
+        "--input-dir", type=str, required=True, help="Input directory containing videos/images"
+    )
+    parser.add_argument(
+        "--output-dir", type=str, required=True, help="Output directory for extracted faces"
+    )
 
     # Processing options
-    parser.add_argument('--mode', type=str, choices=['video', 'image'], default='video',
-                        help='Processing mode')
-    parser.add_argument('--batch-size', type=int, default=60,
-                        help='Batch size for processing')
-    parser.add_argument('--frame-skip', type=int, default=30,
-                        help='Process every Nth frame (video only)')
+    parser.add_argument(
+        "--mode", type=str, choices=["video", "image"], default="video", help="Processing mode"
+    )
+    parser.add_argument("--batch-size", type=int, default=60, help="Batch size for processing")
+    parser.add_argument(
+        "--frame-skip", type=int, default=30, help="Process every Nth frame (video only)"
+    )
 
     # MTCNN parameters
-    parser.add_argument('--stride', type=int, default=1,
-                        help='Detection stride')
-    parser.add_argument('--margin', type=int, default=50,
-                        help='Margin around detected face')
-    parser.add_argument('--min-face-size', type=int, default=100,
-                        help='Minimum face size to detect')
+    parser.add_argument("--stride", type=int, default=1, help="Detection stride")
+    parser.add_argument("--margin", type=int, default=50, help="Margin around detected face")
+    parser.add_argument(
+        "--min-face-size", type=int, default=100, help="Minimum face size to detect"
+    )
 
     # Device
-    parser.add_argument('--device', type=str, default='cuda',
-                        choices=['cuda', 'cpu'],
-                        help='Device to use')
+    parser.add_argument(
+        "--device", type=str, default="cuda", choices=["cuda", "cpu"], help="Device to use"
+    )
 
     args = parser.parse_args()
 
@@ -255,24 +252,21 @@ def main():
 
     # Check device availability
     device = args.device
-    if device == 'cuda' and not torch.cuda.is_available():
+    if device == "cuda" and not torch.cuda.is_available():
         logger.warning("CUDA not available, using CPU")
-        device = 'cpu'
+        device = "cpu"
 
     # Initialize MTCNN
     logger.info("Initializing MTCNN...")
     mtcnn = FastMTCNN(
-        stride=args.stride,
-        margin=args.margin,
-        min_face_size=args.min_face_size,
-        device=device
+        stride=args.stride, margin=args.margin, min_face_size=args.min_face_size, device=device
     )
 
     # Get input files
-    if args.mode == 'video':
-        patterns = ['*.mp4', '*.avi', '*.mov', '*.mkv']
+    if args.mode == "video":
+        patterns = ["*.mp4", "*.avi", "*.mov", "*.mkv"]
     else:
-        patterns = ['*.jpg', '*.jpeg', '*.png']
+        patterns = ["*.jpg", "*.jpeg", "*.png"]
 
     input_files = []
     for pattern in patterns:
@@ -288,22 +282,14 @@ def main():
     total_frames = 0
     total_faces = 0
 
-    for filepath in tqdm(input_files, desc='Processing files'):
+    for filepath in tqdm(input_files, desc="Processing files"):
         try:
-            if args.mode == 'video':
+            if args.mode == "video":
                 frames, faces = process_video(
-                    filepath,
-                    args.output_dir,
-                    mtcnn,
-                    args.batch_size,
-                    args.frame_skip
+                    filepath, args.output_dir, mtcnn, args.batch_size, args.frame_skip
                 )
             else:
-                frames, faces = process_image(
-                    filepath,
-                    args.output_dir,
-                    mtcnn
-                )
+                frames, faces = process_image(filepath, args.output_dir, mtcnn)
 
             total_frames += frames
             total_faces += faces
@@ -312,11 +298,11 @@ def main():
             logger.error(f"Error processing {filepath}: {e}")
             continue
 
-    logger.info(f"Processing complete!")
+    logger.info("Processing complete!")
     logger.info(f"Total frames processed: {total_frames}")
     logger.info(f"Total faces detected: {total_faces}")
     logger.info(f"Faces saved to: {args.output_dir}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

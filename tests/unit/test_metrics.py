@@ -1,10 +1,11 @@
 """Unit tests for metrics module."""
 
-import pytest
 import numpy as np
+import pytest
+
 from deepfake_detector.utils.metrics import (
-    eval_state,
     calculate_metrics,
+    eval_state,
     get_EER_states,
     get_HTER_at_thr,
 )
@@ -43,19 +44,19 @@ class TestMetrics:
         probs, labels = perfect_predictions
         metrics = calculate_metrics(probs, labels, threshold=0.5)
 
-        assert 'accuracy' in metrics
-        assert 'apcer' in metrics
-        assert 'npcer' in metrics
-        assert 'acer' in metrics
-        assert 'precision' in metrics
-        assert 'recall' in metrics
-        assert 'f1_score' in metrics
+        assert "accuracy" in metrics
+        assert "apcer" in metrics
+        assert "npcer" in metrics
+        assert "acer" in metrics
+        assert "precision" in metrics
+        assert "recall" in metrics
+        assert "f1_score" in metrics
 
         # Perfect predictions should have perfect metrics
-        assert metrics['accuracy'] == 1.0
-        assert metrics['apcer'] == 0.0
-        assert metrics['npcer'] == 0.0
-        assert metrics['acer'] == 0.0
+        assert metrics["accuracy"] == 1.0
+        assert metrics["apcer"] == 0.0
+        assert metrics["npcer"] == 0.0
+        assert metrics["acer"] == 0.0
 
     def test_get_EER_states(self, random_predictions):
         """Test EER calculation."""
@@ -82,7 +83,7 @@ class TestMetrics:
         probs = np.random.random(10)
 
         metrics = calculate_metrics(probs, labels, threshold=0.5)
-        assert 'accuracy' in metrics
+        assert "accuracy" in metrics
 
         # Empty arrays should raise or handle gracefully
         with pytest.raises((ValueError, ZeroDivisionError, IndexError)):

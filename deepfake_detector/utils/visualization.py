@@ -2,27 +2,27 @@
 Visualization utilities for model evaluation and training monitoring.
 """
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from typing import List, Optional, Dict
-from pathlib import Path
 import logging
+from typing import Dict, List, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
 # Set style
-sns.set_style('whitegrid')
-plt.rcParams['figure.figsize'] = (10, 6)
+sns.set_style("whitegrid")
+plt.rcParams["figure.figsize"] = (10, 6)
 
 
 def plot_confusion_matrix(
     confusion_matrix: np.ndarray,
-    class_names: List[str] = ['Fake', 'Real'],
+    class_names: List[str] = None,
     normalize: bool = False,
-    title: str = 'Confusion Matrix',
+    title: str = "Confusion Matrix",
     save_path: Optional[str] = None,
-    show: bool = True
+    show: bool = True,
 ) -> None:
     """
     Plot confusion matrix using seaborn heatmap.
@@ -40,31 +40,35 @@ def plot_confusion_matrix(
         >>> cm = confusion_matrix(y_true, y_pred)
         >>> plot_confusion_matrix(cm, save_path='confusion_matrix.png')
     """
+    if class_names is None:
+        class_names = ["Fake", "Real"]
     if normalize:
-        confusion_matrix = confusion_matrix.astype('float') / confusion_matrix.sum(axis=1)[:, np.newaxis]
-        fmt = '.2%'
+        confusion_matrix = (
+            confusion_matrix.astype("float") / confusion_matrix.sum(axis=1)[:, np.newaxis]
+        )
+        fmt = ".2%"
     else:
-        fmt = 'd'
+        fmt = "d"
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(
         confusion_matrix,
         annot=True,
         fmt=fmt,
-        cmap='Blues',
-        xticklabels=['Predicted ' + cn for cn in class_names],
+        cmap="Blues",
+        xticklabels=["Predicted " + cn for cn in class_names],
         yticklabels=class_names,
         linewidths=2,
-        cbar_kws={'label': 'Count' if not normalize else 'Proportion'}
+        cbar_kws={"label": "Count" if not normalize else "Proportion"},
     )
 
-    plt.title(title, fontsize=14, fontweight='bold')
-    plt.ylabel('True Label', fontsize=12)
-    plt.xlabel('Predicted Label', fontsize=12)
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.ylabel("True Label", fontsize=12)
+    plt.xlabel("Predicted Label", fontsize=12)
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         logger.info(f"Confusion matrix saved to {save_path}")
 
     if show:
@@ -74,51 +78,51 @@ def plot_confusion_matrix(
 
 
 def plot_roc_curve(
-    FRR_list: List[float],
-    FAR_list: List[float],
+    frr_list: List[float],
+    far_list: List[float],
     eer: float,
-    title: str = 'ROC Curve (FAR vs FRR)',
+    title: str = "ROC Curve (FAR vs FRR)",
     save_path: Optional[str] = None,
-    show: bool = True
+    show: bool = True,
 ) -> None:
     """
     Plot ROC curve showing FAR vs FRR.
 
     Args:
-        FRR_list: False Rejection Rates
-        FAR_list: False Acceptance Rates
+        frr_list: False Rejection Rates
+        far_list: False Acceptance Rates
         eer: Equal Error Rate
         title: Plot title
         save_path: Path to save figure (optional)
         show: Whether to display the plot
 
     Example:
-        >>> EER, thr, FRR_list, FAR_list = get_EER_states(probs, labels)
-        >>> plot_roc_curve(FRR_list, FAR_list, EER, save_path='roc_curve.png')
+        >>> eer, thr, frr_list, far_list = get_EER_states(probs, labels)
+        >>> plot_roc_curve(frr_list, far_list, eer, save_path='roc_curve.png')
     """
     plt.figure(figsize=(10, 8))
 
     # Plot ROC curve
-    plt.plot(FAR_list, FRR_list, marker='.', label=f'ROC Curve (EER={eer:.4f})', linewidth=2)
+    plt.plot(far_list, frr_list, marker=".", label=f"ROC Curve (EER={eer:.4f})", linewidth=2)
 
     # Plot diagonal (random classifier)
-    plt.plot([0, 1], [0, 1], 'r--', label='Random Classifier', alpha=0.5)
+    plt.plot([0, 1], [0, 1], "r--", label="Random Classifier", alpha=0.5)
 
     # Plot EER point
-    eer_idx = np.argmin(np.abs(np.array(FAR_list) - np.array(FRR_list)))
-    plt.plot(FAR_list[eer_idx], FRR_list[eer_idx], 'ro', markersize=10, label=f'EER Point')
+    eer_idx = np.argmin(np.abs(np.array(far_list) - np.array(frr_list)))
+    plt.plot(far_list[eer_idx], frr_list[eer_idx], "ro", markersize=10, label="EER Point")
 
-    plt.xlabel('False Acceptance Rate (FAR)', fontsize=12)
-    plt.ylabel('False Rejection Rate (FRR)', fontsize=12)
-    plt.title(title, fontsize=14, fontweight='bold')
+    plt.xlabel("False Acceptance Rate (FAR)", fontsize=12)
+    plt.ylabel("False Rejection Rate (FRR)", fontsize=12)
+    plt.title(title, fontsize=14, fontweight="bold")
     plt.xlim(0, 1)
     plt.ylim(0, 1)
     plt.grid(True, alpha=0.3)
-    plt.legend(loc='best', fontsize=10)
+    plt.legend(loc="best", fontsize=10)
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         logger.info(f"ROC curve saved to {save_path}")
 
     if show:
@@ -129,10 +133,10 @@ def plot_roc_curve(
 
 def plot_training_history(
     history: Dict[str, List[float]],
-    metrics: List[str] = ['loss', 'accuracy'],
-    title: str = 'Training History',
+    metrics: List[str] = None,
+    title: str = "Training History",
     save_path: Optional[str] = None,
-    show: bool = True
+    show: bool = True,
 ) -> None:
     """
     Plot training and validation metrics over epochs.
@@ -154,6 +158,8 @@ def plot_training_history(
         ... }
         >>> plot_training_history(history, save_path='training_history.png')
     """
+    if metrics is None:
+        metrics = ["loss", "accuracy"]
     num_metrics = len(metrics)
     fig, axes = plt.subplots(1, num_metrics, figsize=(8 * num_metrics, 6))
 
@@ -163,28 +169,32 @@ def plot_training_history(
     for idx, metric in enumerate(metrics):
         ax = axes[idx]
 
-        train_key = f'train_{metric}'
-        val_key = f'val_{metric}'
+        train_key = f"train_{metric}"
+        val_key = f"val_{metric}"
 
         if train_key in history:
             epochs = range(1, len(history[train_key]) + 1)
-            ax.plot(epochs, history[train_key], 'b-o', label=f'Train {metric.capitalize()}', linewidth=2)
+            ax.plot(
+                epochs, history[train_key], "b-o", label=f"Train {metric.capitalize()}", linewidth=2
+            )
 
         if val_key in history:
             epochs = range(1, len(history[val_key]) + 1)
-            ax.plot(epochs, history[val_key], 'r-s', label=f'Val {metric.capitalize()}', linewidth=2)
+            ax.plot(
+                epochs, history[val_key], "r-s", label=f"Val {metric.capitalize()}", linewidth=2
+            )
 
-        ax.set_xlabel('Epoch', fontsize=12)
+        ax.set_xlabel("Epoch", fontsize=12)
         ax.set_ylabel(metric.capitalize(), fontsize=12)
-        ax.set_title(f'{metric.capitalize()} over Epochs', fontsize=13, fontweight='bold')
-        ax.legend(loc='best')
+        ax.set_title(f"{metric.capitalize()} over Epochs", fontsize=13, fontweight="bold")
+        ax.legend(loc="best")
         ax.grid(True, alpha=0.3)
 
-    plt.suptitle(title, fontsize=16, fontweight='bold', y=1.02)
+    plt.suptitle(title, fontsize=16, fontweight="bold", y=1.02)
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         logger.info(f"Training history saved to {save_path}")
 
     if show:
@@ -197,10 +207,10 @@ def plot_sample_predictions(
     images: np.ndarray,
     predictions: np.ndarray,
     labels: np.ndarray,
-    class_names: List[str] = ['Fake', 'Real'],
+    class_names: List[str] = None,
     num_samples: int = 16,
     save_path: Optional[str] = None,
-    show: bool = True
+    show: bool = True,
 ) -> None:
     """
     Plot sample images with predictions and ground truth.
@@ -221,6 +231,8 @@ def plot_sample_predictions(
         ...     save_path='predictions.png'
         ... )
     """
+    if class_names is None:
+        class_names = ["Fake", "Real"]
     num_samples = min(num_samples, len(images))
     grid_size = int(np.ceil(np.sqrt(num_samples)))
 
@@ -247,20 +259,22 @@ def plot_sample_predictions(
         true_class = labels[idx]
 
         # Set title with color based on correctness
-        color = 'green' if pred_class == true_class else 'red'
-        title = f'Pred: {class_names[pred_class]} ({pred_prob:.2f})\nTrue: {class_names[true_class]}'
-        ax.set_title(title, color=color, fontsize=10, fontweight='bold')
-        ax.axis('off')
+        color = "green" if pred_class == true_class else "red"
+        title = (
+            f"Pred: {class_names[pred_class]} ({pred_prob:.2f})\nTrue: {class_names[true_class]}"
+        )
+        ax.set_title(title, color=color, fontsize=10, fontweight="bold")
+        ax.axis("off")
 
     # Hide extra subplots
     for idx in range(num_samples, len(axes)):
-        axes[idx].axis('off')
+        axes[idx].axis("off")
 
-    plt.suptitle('Sample Predictions', fontsize=16, fontweight='bold')
+    plt.suptitle("Sample Predictions", fontsize=16, fontweight="bold")
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         logger.info(f"Sample predictions saved to {save_path}")
 
     if show:

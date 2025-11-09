@@ -4,11 +4,12 @@ Supports YAML and JSON configuration files.
 """
 
 import json
-import yaml
+import logging
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-from dataclasses import dataclass, asdict, field
-import logging
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,9 @@ class Config:
 
     All parameters are documented and have sensible defaults.
     """
+
     # Model Configuration
-    model_name: str = 'efficientnet-b1'
+    model_name: str = "efficientnet-b1"
     num_classes: int = 2
     dropout_rate: float = 0.5
     pretrained: bool = True
@@ -48,17 +50,17 @@ class Config:
     test_fake_dirs: list = field(default_factory=list)
 
     # Checkpoint Configuration
-    checkpoint_dir: str = 'checkpoints'
+    checkpoint_dir: str = "checkpoints"
     save_every_n_epochs: int = 1
     keep_last_n_checkpoints: int = 5
 
     # Logging Configuration
-    log_dir: str = 'logs'
-    results_dir: str = 'results'
-    experiment_name: str = 'deepfake_detection'
+    log_dir: str = "logs"
+    results_dir: str = "results"
+    experiment_name: str = "deepfake_detection"
 
     # Device Configuration
-    device: str = 'cuda'
+    device: str = "cuda"
     mixed_precision: bool = True
 
     # Evaluation Configuration
@@ -98,11 +100,11 @@ class Config:
 
         config_dict = self.to_dict()
 
-        if filepath.suffix in ['.yaml', '.yml']:
-            with open(filepath, 'w') as f:
+        if filepath.suffix in [".yaml", ".yml"]:
+            with open(filepath, "w") as f:
                 yaml.dump(config_dict, f, default_flow_style=False, indent=2)
-        elif filepath.suffix == '.json':
-            with open(filepath, 'w') as f:
+        elif filepath.suffix == ".json":
+            with open(filepath, "w") as f:
                 json.dump(config_dict, f, indent=2)
         else:
             raise ValueError(f"Unsupported file format: {filepath.suffix}")
@@ -110,7 +112,7 @@ class Config:
         logger.info(f"Configuration saved to {filepath}")
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> 'Config':
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "Config":
         """
         Create Config from dictionary.
 
@@ -127,7 +129,7 @@ class Config:
         return cls(**config_dict)
 
     @classmethod
-    def load(cls, filepath: Union[str, Path]) -> 'Config':
+    def load(cls, filepath: Union[str, Path]) -> "Config":
         """
         Load configuration from file.
 
@@ -145,11 +147,11 @@ class Config:
         if not filepath.exists():
             raise FileNotFoundError(f"Configuration file not found: {filepath}")
 
-        if filepath.suffix in ['.yaml', '.yml']:
-            with open(filepath, 'r') as f:
+        if filepath.suffix in [".yaml", ".yml"]:
+            with open(filepath) as f:
                 config_dict = yaml.safe_load(f)
-        elif filepath.suffix == '.json':
-            with open(filepath, 'r') as f:
+        elif filepath.suffix == ".json":
+            with open(filepath) as f:
                 config_dict = json.load(f)
         else:
             raise ValueError(f"Unsupported file format: {filepath.suffix}")

@@ -5,7 +5,6 @@ Robust training with checkpointing, logging, and monitoring.
 """
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -14,18 +13,23 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import numpy as np
-from tqdm import tqdm
 from sklearn.metrics import accuracy_score, confusion_matrix
+from tqdm import tqdm
+from transformers import AdamW, get_cosine_schedule_with_warmup
+
+from deepfake_detector.data import (
+    create_combined_dataset,
+    create_dataloaders,
+    get_train_transforms,
+    get_val_transforms,
+)
 
 # Import from our package
 from deepfake_detector.models import DeepFakeDetector
-from deepfake_detector.data import create_combined_dataset, get_train_transforms, get_val_transforms, create_dataloaders
-from deepfake_detector.utils import setup_logger, calculate_comprehensive_metrics, plot_confusion_matrix, plot_training_history
-from deepfake_detector.config import Config, load_config
-
-from transformers import AdamW, get_cosine_schedule_with_warmup
+from deepfake_detector.utils import (
+    plot_training_history,
+    setup_logger,
+)
 
 
 def train_epoch(model, dataloader, criterion, optimizer, scheduler, device, epoch, logger):
@@ -35,7 +39,7 @@ def train_epoch(model, dataloader, criterion, optimizer, scheduler, device, epoc
     all_preds = []
     all_labels = []
 
-    pbar = tqdm(dataloader, desc=f'Epoch {epoch} [Train]')
+    pbar = tqdm(dataloader, desc=f"Epoch {epoch} [Train]")
 
     for images, labels in pbar:
         images = images.to(device)
@@ -58,7 +62,7 @@ def train_epoch(model, dataloader, criterion, optimizer, scheduler, device, epoc
         all_labels.extend(labels.cpu().numpy())
 
         # Update progress bar
-        pbar.set_postfix({'loss': f'{loss.item():.4f}'})
+        pbar.set_postfix({"loss": f"{loss.item():.4f}"})
 
     epoch_loss = running_loss / len(dataloader.dataset)
     epoch_acc = accuracy_score(all_labels, all_preds)
@@ -73,7 +77,7 @@ def validate_epoch(model, dataloader, criterion, device, epoch, logger):
     all_preds = []
     all_labels = []
 
-    pbar = tqdm(dataloader, desc=f'Epoch {epoch} [Val]')
+    pbar = tqdm(dataloader, desc=f"Epoch {epoch} [Val]")
 
     with torch.no_grad():
         for images, labels in pbar:
@@ -88,7 +92,7 @@ def validate_epoch(model, dataloader, criterion, device, epoch, logger):
             all_preds.extend(preds)
             all_labels.extend(labels.cpu().numpy())
 
-            pbar.set_postfix({'loss': f'{loss.item():.4f}'})
+            pbar.set_postfix({"loss": f"{loss.item():.4f}"})
 
     epoch_loss = running_loss / len(dataloader.dataset)
     epoch_acc = accuracy_score(all_labels, all_preds)
@@ -99,62 +103,76 @@ def validate_epoch(model, dataloader, criterion, device, epoch, logger):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Train DeepFake Detection Model',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Train DeepFake Detection Model",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument('--config', type=str, default=None,
-                        help='Path to config file')
-    parser.add_argument('--train-real', type=str, nargs='+', required=True,
-                        help='Paths to training real images directories')
-    parser.add_argument('--train-fake', type=str, nargs='+', required=True,
-                        help='Paths to training fake images directories')
-    parser.add_argument('--val-real', type=str, nargs='+', required=True,
-                        help='Paths to validation real images directories')
-    parser.add_argument('--val-fake', type=str, nargs='+', required=True,
-                        help='Paths to validation fake images directories')
-    parser.add_argument('--output-dir', type=str, default='outputs',
-                        help='Output directory for checkpoints and logs')
-    parser.add_argument('--batch-size', type=int, default=32,
-                        help='Batch size')
-    parser.add_argument('--epochs', type=int, default=20,
-                        help='Number of epochs')
-    parser.add_argument('--lr', type=float, default=8e-4,
-                        help='Learning rate')
-    parser.add_argument('--model', type=str, default='efficientnet-b1',
-                        help='Model architecture')
-    parser.add_argument('--resume', type=str, default=None,
-                        help='Resume from checkpoint')
+    parser.add_argument("--config", type=str, default=None, help="Path to config file")
+    parser.add_argument(
+        "--train-real",
+        type=str,
+        nargs="+",
+        required=True,
+        help="Paths to training real images directories",
+    )
+    parser.add_argument(
+        "--train-fake",
+        type=str,
+        nargs="+",
+        required=True,
+        help="Paths to training fake images directories",
+    )
+    parser.add_argument(
+        "--val-real",
+        type=str,
+        nargs="+",
+        required=True,
+        help="Paths to validation real images directories",
+    )
+    parser.add_argument(
+        "--val-fake",
+        type=str,
+        nargs="+",
+        required=True,
+        help="Paths to validation fake images directories",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="outputs",
+        help="Output directory for checkpoints and logs",
+    )
+    parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
+    parser.add_argument("--epochs", type=int, default=20, help="Number of epochs")
+    parser.add_argument("--lr", type=float, default=8e-4, help="Learning rate")
+    parser.add_argument("--model", type=str, default="efficientnet-b1", help="Model architecture")
+    parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint")
 
     args = parser.parse_args()
 
     # Create output directories
-    checkpoint_dir = Path(args.output_dir) / 'checkpoints'
-    log_dir = Path(args.output_dir) / 'logs'
-    results_dir = Path(args.output_dir) / 'results'
+    checkpoint_dir = Path(args.output_dir) / "checkpoints"
+    log_dir = Path(args.output_dir) / "logs"
+    results_dir = Path(args.output_dir) / "results"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     # Setup logger
-    logger = setup_logger(
-        name='training',
-        log_file=str(log_dir / 'training.log'),
-        level='INFO'
-    )
+    logger = setup_logger(name="training", log_file=str(log_dir / "training.log"), level="INFO")
 
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info("DeepFake Detection Training")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     # Device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     # Create datasets
     logger.info("Creating datasets...")
 
-    image_size = 240 if 'b1' in args.model else 224
+    image_size = 240 if "b1" in args.model else 224
 
     train_transforms = get_train_transforms(image_size)
     val_transforms = get_val_transforms(image_size)
@@ -176,7 +194,7 @@ def main():
         train_dataset=train_dataset,
         val_dataset=val_dataset,
         batch_size=args.batch_size,
-        num_workers=4
+        num_workers=4,
     )
 
     # Create model
@@ -194,9 +212,7 @@ def main():
 
     num_train_steps = len(train_loader) * args.epochs
     scheduler = get_cosine_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=len(train_loader) * 5,
-        num_training_steps=num_train_steps
+        optimizer, num_warmup_steps=len(train_loader) * 5, num_training_steps=num_train_steps
     )
 
     # Resume from checkpoint
@@ -207,12 +223,7 @@ def main():
         # TODO: Load optimizer and scheduler state
 
     # Training history
-    history = {
-        'train_loss': [],
-        'train_accuracy': [],
-        'val_loss': [],
-        'val_accuracy': []
-    }
+    history = {"train_loss": [], "train_accuracy": [], "val_loss": [], "val_accuracy": []}
 
     # Training loop
     best_val_acc = 0.0
@@ -235,24 +246,24 @@ def main():
         logger.info(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
 
         # Update history
-        history['train_loss'].append(train_loss)
-        history['train_accuracy'].append(train_acc)
-        history['val_loss'].append(val_loss)
-        history['val_accuracy'].append(val_acc)
+        history["train_loss"].append(train_loss)
+        history["train_accuracy"].append(train_acc)
+        history["val_loss"].append(val_loss)
+        history["val_accuracy"].append(val_acc)
 
         # Save checkpoint
-        checkpoint_path = checkpoint_dir / f'epoch_{epoch}.pth'
+        checkpoint_path = checkpoint_dir / f"epoch_{epoch}.pth"
         model.save_checkpoint(
             str(checkpoint_path),
             epoch=epoch,
             optimizer_state=optimizer.state_dict(),
-            metrics={'val_acc': val_acc, 'val_loss': val_loss}
+            metrics={"val_acc": val_acc, "val_loss": val_loss},
         )
 
         # Save best model
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            best_path = checkpoint_dir / 'best_model.pth'
+            best_path = checkpoint_dir / "best_model.pth"
             model.save_checkpoint(str(best_path), epoch=epoch)
             logger.info(f"Best model saved with val_acc: {best_val_acc:.4f}")
 
@@ -260,14 +271,14 @@ def main():
     logger.info("Plotting training history...")
     plot_training_history(
         history,
-        metrics=['loss', 'accuracy'],
-        save_path=str(results_dir / 'training_history.png'),
-        show=False
+        metrics=["loss", "accuracy"],
+        save_path=str(results_dir / "training_history.png"),
+        show=False,
     )
 
     logger.info("Training complete!")
     logger.info(f"Best validation accuracy: {best_val_acc:.4f}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

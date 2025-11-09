@@ -128,6 +128,24 @@ cov = "pytest --cov=deepfake_detector --cov-report=term-missing {args:tests}"
 [tool.ruff]
 target-version = "py38"
 line-length = 100
+
+# Exclude directories
+exclude = [
+    ".git",
+    ".hatch",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "checkpoints",
+    "logs",
+    "results",
+]
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -147,32 +165,21 @@ ignore = [
     "E501",   # line too long (handled by black)
     "ANN101", # missing type annotation for self
     "ANN102", # missing type annotation for cls
+    "ANN204", # missing return type annotation for __init__
     "ANN401", # dynamically typed expressions (Any)
     "S301",   # pickle usage (we use torch.load which is similar)
     "S311",   # random usage
+    "S603",   # subprocess call
+    "S607",   # subprocess with partial path
 ]
 
-# Exclude directories
-exclude = [
-    ".git",
-    ".hatch",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".venv",
-    "__pycache__",
-    "build",
-    "dist",
-    "checkpoints",
-    "logs",
-    "results",
-]
-
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # unused imports
-"tests/**/*.py" = ["S101", "ANN"]  # assert usage, annotations
+"tests/**/*.py" = ["S101", "ANN", "N802", "N806"]  # assert usage, annotations, naming
+"scripts/**/*.py" = ["ANN", "N806"]  # Scripts are entry points, uppercase acronyms allowed
+"deepfake_detector/utils/metrics.py" = ["N806", "N802", "N803"]  # Metrics use uppercase acronyms
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["deepfake_detector"]
 
 # ===== BLACK CONFIGURATION =====

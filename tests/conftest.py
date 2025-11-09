@@ -1,15 +1,14 @@
 """Pytest configuration and fixtures."""
 
+import numpy as np
 import pytest
 import torch
-import numpy as np
-from pathlib import Path
 
 
 @pytest.fixture
 def device():
     """Get device for testing."""
-    return torch.device('cpu')
+    return torch.device("cpu")
 
 
 @pytest.fixture
@@ -38,7 +37,7 @@ def mock_config():
     from deepfake_detector.config import Config
 
     return Config(
-        model_name='efficientnet-b0',
+        model_name="efficientnet-b0",
         batch_size=2,
         num_epochs=1,
         learning_rate=1e-4,

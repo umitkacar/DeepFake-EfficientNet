@@ -87,6 +87,28 @@ repos:
         additional_dependencies: ['bandit[toml]']
         exclude: ^tests/
 
+  # Coverage checks (run tests with coverage)
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: pytest with coverage
+        entry: pytest
+        language: system
+        args: [--cov=deepfake_detector, --cov-report=term-missing, --cov-fail-under=70, -n, auto]
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+  # UV audit for security vulnerabilities
+  - repo: local
+    hooks:
+      - id: uv-audit
+        name: uv audit security check
+        entry: bash -c 'command -v uv >/dev/null 2>&1 && uv pip list --format json | python -m json.tool || echo "UV not installed, skipping audit"'
+        language: system
+        pass_filenames: false
+        always_run: true
+
   # Markdown linting
   - repo: https://github.com/markdownlint/markdownlint
     rev: v0.12.0

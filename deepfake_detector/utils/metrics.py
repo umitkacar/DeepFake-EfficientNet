@@ -3,11 +3,12 @@ Evaluation metrics for deepfake detection.
 Includes EER, ACER, APCER, NPCER, and other forensic metrics.
 """
 
-import numpy as np
-import math
-from typing import Tuple, List, Dict, Optional
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 import logging
+import math
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +26,16 @@ def eval_state(probs: np.ndarray, labels: np.ndarray, thr: float) -> Tuple[int, 
         Tuple of (TN, FN, FP, TP)
     """
     predict = probs >= thr
-    TN = np.sum((labels == 0) & (predict == False))
-    FN = np.sum((labels == 1) & (predict == False))
-    FP = np.sum((labels == 0) & (predict == True))
-    TP = np.sum((labels == 1) & (predict == True))
+    TN = np.sum((labels == 0) & (not predict))
+    FN = np.sum((labels == 1) & (not predict))
+    FP = np.sum((labels == 0) & (predict))
+    TP = np.sum((labels == 1) & (predict))
     return TN, FN, FP, TP
 
 
-def calculate_metrics(probs: np.ndarray, labels: np.ndarray, threshold: float = 0.5) -> Dict[str, float]:
+def calculate_metrics(
+    probs: np.ndarray, labels: np.ndarray, threshold: float = 0.5
+) -> Dict[str, float]:
     """
     Calculate comprehensive metrics for deepfake detection.
 
@@ -70,18 +73,18 @@ def calculate_metrics(probs: np.ndarray, labels: np.ndarray, threshold: float = 
     SPECIFICITY = TN / (TN + FP) if (TN + FP) > 0 else 0.0
 
     metrics = {
-        'accuracy': ACC,
-        'apcer': APCER,
-        'npcer': NPCER,
-        'acer': ACER,
-        'precision': PRECISION,
-        'recall': RECALL,
-        'f1_score': F1,
-        'specificity': SPECIFICITY,
-        'tp': int(TP),
-        'tn': int(TN),
-        'fp': int(FP),
-        'fn': int(FN)
+        "accuracy": ACC,
+        "apcer": APCER,
+        "npcer": NPCER,
+        "acer": ACER,
+        "precision": PRECISION,
+        "recall": RECALL,
+        "f1_score": F1,
+        "specificity": SPECIFICITY,
+        "tp": int(TP),
+        "tn": int(TN),
+        "fp": int(FP),
+        "fn": int(FN),
     }
 
     return metrics
@@ -104,9 +107,7 @@ def get_threshold(probs: np.ndarray, grid_density: int = 10000) -> List[float]:
 
 
 def get_EER_states(
-    probs: np.ndarray,
-    labels: np.ndarray,
-    grid_density: int = 10000
+    probs: np.ndarray, labels: np.ndarray, grid_density: int = 10000
 ) -> Tuple[float, float, List[float], List[float]]:
     """
     Calculate Equal Error Rate (EER) and optimal threshold.
@@ -130,19 +131,19 @@ def get_EER_states(
     for thr in thresholds:
         TN, FN, FP, TP = eval_state(probs, labels, thr)
 
-        if (FN + TP == 0):
-            FRR = TPR = 1.0
+        if FN + TP == 0:
+            FRR = 1.0
             FAR = FP / float(FP + TN) if (FP + TN) > 0 else 1.0
-            TNR = TN / float(TN + FP) if (TN + FP) > 0 else 0.0
-        elif (FP + TN == 0):
-            TNR = FAR = 1.0
+            TN / float(TN + FP) if (TN + FP) > 0 else 0.0
+        elif FP + TN == 0:
+            FAR = 1.0
             FRR = FN / float(FN + TP)
-            TPR = TP / float(TP + FN)
+            TP / float(TP + FN)
         else:
             FAR = FP / float(FP + TN)
             FRR = FN / float(FN + TP)
-            TNR = TN / float(TN + FP)
-            TPR = TP / float(TP + FN)
+            TN / float(TN + FP)
+            TP / float(TP + FN)
 
         dist = math.fabs(FRR - FAR)
         FAR_list.append(FAR)
@@ -174,10 +175,10 @@ def get_HTER_at_thr(probs: np.ndarray, labels: np.ndarray, thr: float) -> float:
     """
     TN, FN, FP, TP = eval_state(probs, labels, thr)
 
-    if (FN + TP == 0):
+    if FN + TP == 0:
         FRR = 1.0
         FAR = FP / float(FP + TN) if (FP + TN) > 0 else 1.0
-    elif (FP + TN == 0):
+    elif FP + TN == 0:
         FAR = 1.0
         FRR = FN / float(FN + TP)
     else:
@@ -189,9 +190,7 @@ def get_HTER_at_thr(probs: np.ndarray, labels: np.ndarray, thr: float) -> float:
 
 
 def calculate_comprehensive_metrics(
-    probs: np.ndarray,
-    labels: np.ndarray,
-    preds: Optional[np.ndarray] = None
+    probs: np.ndarray, labels: np.ndarray, preds: Optional[np.ndarray] = None
 ) -> Dict[str, float]:
     """
     Calculate all metrics including EER, ACER, accuracy, etc.
@@ -212,30 +211,32 @@ def calculate_comprehensive_metrics(
 
     # EER and optimal threshold
     EER, optimal_thr, _, _ = get_EER_states(probs, labels)
-    metrics['eer'] = EER
-    metrics['optimal_threshold'] = optimal_thr
+    metrics["eer"] = EER
+    metrics["optimal_threshold"] = optimal_thr
 
     # HTER at threshold 0.5
     HTER = get_HTER_at_thr(probs, labels, 0.5)
-    metrics['hter'] = HTER
+    metrics["hter"] = HTER
 
     # Accuracy at optimal threshold
     optimal_preds = (probs >= optimal_thr).astype(int)
     optimal_acc = accuracy_score(labels, optimal_preds)
-    metrics['accuracy_at_optimal_thr'] = optimal_acc
+    metrics["accuracy_at_optimal_thr"] = optimal_acc
 
     # AUC-ROC if possible
     try:
         auc = roc_auc_score(labels, probs)
-        metrics['auc_roc'] = auc
-    except:
-        logger.warning("Could not calculate AUC-ROC")
-        metrics['auc_roc'] = 0.0
+        metrics["auc_roc"] = auc
+    except Exception as e:
+        logger.warning(f"Could not calculate AUC-ROC: {e}")
+        metrics["auc_roc"] = 0.0
 
     return metrics
 
 
-def print_metrics(metrics: Dict[str, float], title: str = "Metrics", use_logging: bool = False) -> None:
+def print_metrics(
+    metrics: Dict[str, float], title: str = "Metrics", use_logging: bool = False
+) -> None:
     """
     Pretty print metrics.
 

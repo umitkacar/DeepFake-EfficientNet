@@ -42,7 +42,7 @@ class DeepFakeDataset(Dataset):
         data_config: List[Tuple[str, int]],
         is_real: bool = True,
         transform: Optional[Compose] = None,
-        image_extensions: Tuple[str, ...] = ('.jpg', '.jpeg', '.png')
+        image_extensions: Tuple[str, ...] = (".jpg", ".jpeg", ".png"),
     ):
         super().__init__()
 
@@ -55,8 +55,7 @@ class DeepFakeDataset(Dataset):
         self.data = self._build_dataset()
 
         logger.info(
-            f"{'Real' if is_real else 'Fake'} dataset initialized: "
-            f"{len(self.data)} samples"
+            f"{'Real' if is_real else 'Fake'} dataset initialized: " f"{len(self.data)} samples"
         )
 
     def _build_dataset(self) -> pd.DataFrame:
@@ -71,16 +70,16 @@ class DeepFakeDataset(Dataset):
             # Collect all image paths
             image_paths = []
             for ext in self.image_extensions:
-                image_paths.extend(glob.glob(os.path.join(directory, f'*{ext}')))
+                image_paths.extend(glob.glob(os.path.join(directory, f"*{ext}")))
 
             if len(image_paths) == 0:
                 logger.warning(f"No images found in {directory}")
                 continue
 
             # Create dataframe
-            df = pd.DataFrame(image_paths, columns=['image_path'])
-            df['real'] = 1.0 if self.is_real else 0.0
-            df['fake'] = 0.0 if self.is_real else 1.0
+            df = pd.DataFrame(image_paths, columns=["image_path"])
+            df["real"] = 1.0 if self.is_real else 0.0
+            df["fake"] = 0.0 if self.is_real else 1.0
 
             # Sample if necessary
             if sample_num > 0 and len(df) >= sample_num:
@@ -114,9 +113,9 @@ class DeepFakeDataset(Dataset):
             Tuple of (image_tensor, label_tensor)
         """
         # Get image path and labels
-        image_path = self.data.loc[idx, 'image_path']
-        real_label = self.data.loc[idx, 'real']
-        fake_label = self.data.loc[idx, 'fake']
+        image_path = self.data.loc[idx, "image_path"]
+        real_label = self.data.loc[idx, "real"]
+        fake_label = self.data.loc[idx, "fake"]
 
         # Load image
         image_bgr = cv2.imread(image_path)
@@ -132,7 +131,7 @@ class DeepFakeDataset(Dataset):
         # Apply transforms
         if self.transform is not None:
             transformed = self.transform(image=image)
-            image = transformed['image']
+            image = transformed["image"]
 
         # Create label (class index)
         label = torch.tensor(int(fake_label), dtype=torch.long)
@@ -141,7 +140,7 @@ class DeepFakeDataset(Dataset):
 
     def get_labels(self) -> np.ndarray:
         """Get all labels as numpy array."""
-        return self.data['fake'].values.astype(int)
+        return self.data["fake"].values.astype(int)
 
     def get_class_weights(self) -> torch.Tensor:
         """
@@ -160,7 +159,7 @@ class DeepFakeDataset(Dataset):
 def create_combined_dataset(
     real_config: List[Tuple[str, int]],
     fake_config: List[Tuple[str, int]],
-    transform: Optional[Compose] = None
+    transform: Optional[Compose] = None,
 ) -> Dataset:
     """
     Create a combined dataset with both real and fake samples.
@@ -182,10 +181,7 @@ def create_combined_dataset(
     fake_dataset = DeepFakeDataset(fake_config, is_real=False, transform=transform)
 
     # Combine datasets
-    combined_data = pd.concat(
-        [real_dataset.data, fake_dataset.data],
-        ignore_index=True
-    )
+    combined_data = pd.concat([real_dataset.data, fake_dataset.data], ignore_index=True)
 
     # Create new dataset with combined data
     class CombinedDataset(Dataset):
@@ -197,8 +193,8 @@ def create_combined_dataset(
             return len(self.data)
 
         def __getitem__(self, idx):
-            image_path = self.data.loc[idx, 'image_path']
-            fake_label = self.data.loc[idx, 'fake']
+            image_path = self.data.loc[idx, "image_path"]
+            fake_label = self.data.loc[idx, "fake"]
 
             image_bgr = cv2.imread(image_path)
             if image_bgr is None:
@@ -208,7 +204,7 @@ def create_combined_dataset(
 
             if self.transform is not None:
                 transformed = self.transform(image=image)
-                image = transformed['image']
+                image = transformed["image"]
 
             label = torch.tensor(int(fake_label), dtype=torch.long)
             return image, label

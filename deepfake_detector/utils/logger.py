@@ -5,16 +5,16 @@ Provides structured logging for training and evaluation.
 
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
 
 def setup_logger(
     name: str = "deepfake_detector",
     log_file: Optional[str] = None,
     level: int = logging.INFO,
-    format_string: Optional[str] = None
+    format_string: Optional[str] = None,
 ) -> logging.Logger:
     """
     Set up a logger with console and optional file handlers.
@@ -38,9 +38,9 @@ def setup_logger(
 
     # Default format
     if format_string is None:
-        format_string = '[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s'
+        format_string = "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
 
-    formatter = logging.Formatter(format_string, datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(format_string, datefmt="%Y-%m-%d %H:%M:%S")
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
@@ -53,7 +53,7 @@ def setup_logger(
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
-        file_handler = logging.FileHandler(log_file, mode='a')
+        file_handler = logging.FileHandler(log_file, mode="a")
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -85,12 +85,13 @@ class TqdmLoggingHandler(logging.Handler):
     Prevents log messages from breaking progress bar display.
     """
 
-    def __init__(self, level=logging.NOTSET):
+    def __init__(self, level: int = logging.NOTSET) -> None:
         super().__init__(level)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             from tqdm import tqdm
+
             msg = self.format(record)
             tqdm.write(msg)
             self.flush()
@@ -99,9 +100,7 @@ class TqdmLoggingHandler(logging.Handler):
 
 
 def create_experiment_logger(
-    experiment_name: str,
-    log_dir: str = "logs",
-    level: int = logging.INFO
+    experiment_name: str, log_dir: str = "logs", level: int = logging.INFO
 ) -> logging.Logger:
     """
     Create a logger for an experiment with timestamped log file.
@@ -122,8 +121,4 @@ def create_experiment_logger(
     log_filename = f"{experiment_name}_{timestamp}.log"
     log_path = Path(log_dir) / log_filename
 
-    return setup_logger(
-        name=experiment_name,
-        log_file=str(log_path),
-        level=level
-    )
+    return setup_logger(name=experiment_name, log_file=str(log_path), level=level)

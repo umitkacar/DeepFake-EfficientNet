@@ -7,11 +7,14 @@ __version__ = "2.0.0"
 __author__ = "Umit Kacar"
 __license__ = "MIT"
 
-from deepfake_detector.models import DeepFakeDetector
 from deepfake_detector.data import DeepFakeDataset
-from deepfake_detector.utils import setup_logger, calculate_metrics
+from deepfake_detector.models import DeepFakeDetector
+from deepfake_detector.utils import calculate_metrics, setup_logger
 
 __all__ = [
+    "__version__",
+    "__author__",
+    "__license__",
     "DeepFakeDetector",
     "DeepFakeDataset",
     "setup_logger",
